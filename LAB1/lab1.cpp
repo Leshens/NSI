@@ -1,3 +1,4 @@
+/*
 #include <any>
 #include <functional>
 #include <iostream>
@@ -34,9 +35,10 @@ int main(int argc, char **argv) {
         cout << "result is: " << c << endl;
     }
     catch (std::out_of_range aor) {
-        cout << "podaj argument. Dostępne to: ";
+        cout << "Enter a valid argument. The available are: ";
         for (auto [k, v] : formatery) cout << " " << k;
         cout << endl;
     }
     return 0;
 }
+*/
