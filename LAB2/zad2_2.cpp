@@ -1,28 +1,12 @@
 #include <iostream>
-#include <functional>
 #include <vector>
+#include <functional>
 #include <random>
+#include <cmath>
+#include <map>
 #include <string>
-double bealeF(std::vector <double> xy) {
-    double x = xy[0];
-    double y = xy[1];
-    double first_square = (1.5 - x - x*y)*(1.5 - x - x*y);
-    double second_square = (2.25 - x - x*y*y)*(2.25 - x - x*y*y);
-    double third_square = (2.625 - x - x*y*y*y)*(2.625 - x - x*y*y*y);
-    return first_square + second_square + third_square;
-}
 
-double matyasF(std::vector <double> xy){
-    double x = xy[0];
-    double y = xy[1];
-    return 0.26*(x*x + y*y) - 0.48*x*y;
-}
-
-double boothF(std::vector <double> xy){
-    double x = xy[0];
-    double y = xy[1];
-    return pow((x + 2*y + 5),2) + pow((2*x+y-5),2);
-    };
+using mojafunkcja_t = std::function<double(std::vector<double>)>;
 
 std::vector<double> get_result(std::function<double(std::vector<double>)> f, double border_1, double border_2, int iterations){
     std::random_device rd; // obtain a random number from hardware
@@ -44,16 +28,37 @@ std::vector<double> get_result(std::function<double(std::vector<double>)> f, dou
 }
 
 int main(int argc, char **argv) {
-    std::vector<std::string> argument(argv, argv + argc);
-    std::string func_name = argument.at(1);
 
-    std::vector<double> values;
-    transform(argv + 2, argv + argc,  std::back_inserter(values), [](const char* v){return std::stod(v);});
-    double border_low = values.at(0);
-    double border_high = values.at(1);
-    std::vector<double> my_result = get_result(boothF, -10.0, 10.0, 10000000);
-    std::cout << my_result[0] << std::endl;
-    std::cout << my_result[1] << std::endl;
+    using namespace std;
+    map<string, mojafunkcja_t> optfunction;
+    optfunction["bealeF"] = [](vector<double> args) {
+        double x = args.at(0);
+        double y = args.at(1);
+        double first_square = (1.5 - x - x*y)*(1.5 - x - x*y);
+        double second_square = (2.25 - x - x*y*y)*(2.25 - x - x*y*y);
+        double third_square = (2.625 - x - x*y*y*y)*(2.625 - x - x*y*y*y);
+        return first_square + second_square + third_square;
 
-    return 0;
-}
+    };
+    optfunction["boothF"] = [](vector<double> args) {
+        double x = args.at(0);
+        double y = args.at(1);
+        return pow((x + 2*y + 5),2) + pow((2*x+y-5),2);
+    };
+    optfunction["matyasF"] = [](vector<double> args) {
+        double x = args.at(0);
+        double y = args.at(1);
+        return 0.26*(pow(x,2) + pow(x,2))-0.48*(x*y);
+    };
+    vector<string> argumenty(argv, argv + argc);
+    auto selected_f = argumenty.at(1);
+    auto f = optfunction.at(selected_f);
+
+        std::vector<std::string> argument(argv, argv + argc);
+        std::string func_name = argument.at(1);
+        double low = atof(argv[2]);
+        double high = atof(argv[3]);
+        vector<double> output = get_result(optfunction[func_name], low, high, 1000000);
+        cout << "x = " << output[0] << ", y = " << output[1] << endl;
+        return 0;
+    }
