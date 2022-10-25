@@ -1,160 +1,160 @@
+/*
 #include <iostream>
 #include <functional>
 #include <vector>
 #include <random>
 #include <string>
-double beale_function(std::vector <double> xy) {
-//    -4.5, 4.5
-    double x = xy[0];
-    double y = xy[1];
-    double first_square = (1.5 - x + x*y)*(1.5 - x + x*y);
-    double second_square = (2.25 - x + x*y*y)*(2.25 - x + x*y*y);
-    double third_square = (2.625 - x + x*y*y*y)*(2.625 - x + x*y*y*y);
-    return first_square + second_square + third_square;
+#include <math.h>
+#include <map>
+#include <chrono>
+using namespace std;
+using namespace std::chrono;
+
+// Booth function
+double booth(double x, double y){
+    return pow((x + 2 * y - 7), 2) + pow((2 * x + y - 5), 2);
 }
 
-double restrigin_function(std::vector <double> xy){
-    double x = xy[0];
-    double y = xy[1];
-    double A = 10.0;
-    return A*2.0 + x*x - A*cos(2*M_PI*x) + y*y - A*cos(2*M_PI*y);
+// Matyas function
+double matyas(double x, double y){
+    return 0.26 * (pow((x), 2) + pow((y), 2)) - 0.48 * x * y;
 }
 
-double matyas_function(std::vector <double> xy){
-//    -10 , 10
-    double x = xy[0];
-    double y = xy[1];
-    return 0.26*(x*x + y*y) - 0.48*x*y;
+// Himmelblau's function
+double himmel(double x, double y){
+    return pow((pow((x), 2) + y - 11), 2) + pow((x + pow((y), 2) - 7), 2);
 }
 
-double him_function(std::vector <double> xy){
-//    -5 ,5
-    double x = xy[0];
-    double y = xy[1];
-    return (x*x + y - 11.0)*(x*x + y - 11.0) + (x + y*y - 7.0)*(x + y*y - 7.0);
+//Hölder table function
+double holder(double x, double y){
+    return -abs(sin(x)*cos(y)*exp(abs(1-(sqrt(pow((x),2)+pow((y),2))/M_PI))));
 }
 
-std::vector<double> get_result(std::function<double(std::vector<double>)> f, double border_1, double border_2, int iterations){
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_real_distribution<double> distr(border_1, border_2);
-    std::vector<double> closest_numbers = {distr(gen), distr(gen)};
-
-    double result = f(closest_numbers);
-    for(int u = 0; u < iterations; u++){
-        std::vector<double> args = {distr(gen), distr(gen)};
-        double new_result = f(args);
+vector<double> full_review_method(function<double(double, double)> f, double low, double high, int repeats){
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_real_distribution<double> distr(low, high);
+    vector<double> best_result = {distr(gen), distr(gen)};
+    double result = f(best_result.at(0), best_result.at(1));
+    for (int i = 0; i < repeats; i++){
+        vector<double> args = {distr(gen), distr(gen)};
+        double new_result = f(args.at(0), args.at(1));
         if (new_result < result){
             result = new_result;
-            closest_numbers = args;
+            best_result = args;
         }
-
     }
-    return closest_numbers;
+    return best_result;
 }
 
-std::vector<double> get_hill_neighbor(std::vector<double> ar) {
-    double a = ar[0];
-    double b = ar[1];
-    std::random_device rd;
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_real_distribution<double> distance(-0.005, 0.005);
-    a = a + distance(gen);
-    b = b + distance(gen);
-    return {a, b};
+vector<double> next_hill_position(double x, double y){
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_real_distribution<double> distance(-0.005, 0.005);
+    x = x + distance(gen);
+    y = y + distance(gen);
+    return {x, y};
 }
 
-std::vector<double> hill_climbing(std::function<double(std::vector<double>)> f, double border_1, double border_2, int iterations){
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_real_distribution<double> distr(border_1, border_2);
-    std::vector<double> closest_numbers = {distr(gen), distr(gen)};
-
-    double result = f(closest_numbers);
-    for(int u = 0; u < iterations; u++){
-        std::vector<double> args = get_hill_neighbor(closest_numbers);
-        if (args[0] > border_2 or args[0] < border_1 or args[1] > border_2 or args[1] < border_1){
+vector<double> hill_climbing_algorithm(function<double(double, double)> f, double low, double high, int repeats){
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_real_distribution<double> distr(low, high);
+    vector<double> best_result = {distr(gen), distr(gen)};
+    double result = f(best_result.at(0), best_result.at(1));
+    for (int i = 0; i < repeats; i++){
+        vector<double> args = next_hill_position(best_result.at(0), best_result.at(1));
+        if (args[0] > high or args[0] < low or args[1] > high or args[1] < low){
             continue;
         }
-        double new_result = f(args);
+        double new_result = f(args.at(0), args.at(1));
         if (new_result < result){
             result = new_result;
-            closest_numbers = args;
+            best_result = args;
         }
-
     }
-    return closest_numbers;
+    return best_result;
 }
 
-
-std::vector<double> generate_neighbour(std::vector<double> current_point){
-    double a = current_point[0];
-    double b = current_point[1];
-    std::random_device rd;
-    std::mt19937 gen(rd()); // seed the generator
-    std::normal_distribution<double> distance;
-    a = a + 0.01*distance(gen);
-    b = b + 0.01*distance(gen);
-    return {a, b};
+vector<double> next_position_generation(double x, double y){
+    random_device rd;
+    mt19937 gen(rd());
+    normal_distribution<double> distance;
+    x = x + 0.01 * distance(gen);
+    y = y + 0.01 * distance(gen);
+    return {x, y};
 }
 
-std::vector<double> simulate_annealing(std::function<double(std::vector<double>)> f, double border_1, double border_2, int iterations){
-    std::random_device rd; // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-    std::uniform_real_distribution<double> distr(border_1, border_2);
-    std::vector<double> closest_numbers = {distr(gen), distr(gen)};
-    std::vector<double> args = {distr(gen), distr(gen)};
-    double result = f(closest_numbers);
-    std::vector<std::vector<double>> visited_points = {};
-
-    for (int k = 0; k < iterations; k++){
-        std::vector<double> neighbour = generate_neighbour(closest_numbers);
-        double new_result = f(neighbour);
+vector<double> annealing_algorithm(function<double(double, double)> f, double low, double high, int repeats){
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_real_distribution<double> distr(low, high);
+    vector<double> best_result = {distr(gen), distr(gen)};
+    vector<double> args = {distr(gen), distr(gen)};
+    double result = f(best_result.at(0), best_result.at(1));
+    vector<vector<double>> visited_points = {};
+    for (int i = 0; i < repeats; i++){
+        vector<double> new_position = next_position_generation(best_result.at(0), best_result.at(1));
+        double new_result = f(new_position.at(0),new_position.at(1));
         if (new_result < result){
             result = new_result;
-            closest_numbers = neighbour;
+            best_result = new_position;
         }
-        else {
-            std::uniform_real_distribution<double> rand(0, 1);
-            double temp = new_result-result;
-            if (temp < 0){
-                temp = temp * -1;
+        else{
+            uniform_real_distribution<double> rand(0, 1);
+            double diff_result = new_result - result;
+            if (diff_result < 0){
+                diff_result = diff_result * -1;
             }
-            double Tk = 10000.0/k;
-            if (rand(gen) < exp(-1*temp)/Tk) {
-                closest_numbers = neighbour;
+            double Tk = 10000.0 / i;
+            if (rand(gen) < exp(-1 * diff_result) / Tk){
+                best_result = new_position;
             }
-
         }
-
     }
-
-
-    for(int u = 0; u < iterations; u++){
-        std::vector<double> args = {distr(gen), distr(gen)};
-        double new_result = f(args);
+    for (int j = 0; j < repeats; j++){
+        vector<double> args = {distr(gen), distr(gen)};
+        double new_result = f(args.at(0), args.at(1));
         if (new_result < result){
             result = new_result;
-            closest_numbers = args;
+            best_result = args;
         }
-
     }
-    return closest_numbers;
+    return best_result;
 }
+typedef double (*FnPtr)(double, double);
+int main(int argc, char **argv){
+    vector<string> argument(argv, argv + argc);
+    string function_name = argument.at(1);
+    double low = atof(argv[2]);
+    double high = atof(argv[3]);
+    map<string, FnPtr> myMap;
+    myMap["booth"] = booth;
+    myMap["matyas"] = matyas;
+    myMap["himmel"] = himmel;
+    myMap["holder"] = holder;
 
+    auto start = high_resolution_clock::now();
+    cout << "Full rewiev:" << endl;
+    vector<double> output = full_review_method(myMap[function_name], low, high, 1000000);
+    auto stop = high_resolution_clock::now();
+    auto duration = stop - start;
+    cout << "x = " << output[0] << ", y = " << output[1] << ", Czas: " << duration/chrono::milliseconds(1000)<< "s" << endl;
 
-int main(int argc, char **argv) {
-    std::vector<double> my_result = get_result(matyas_function, -5.12, 5.12, 1000000);
-    std::cout << "stochastic: " << std::endl;
-    std::cout << my_result[0] << std::endl;
-    std::cout << my_result[1] << std::endl;
-    std::vector<double> annealing_result = simulate_annealing(matyas_function, -5.12, 5.12, 1000000);
-    std::cout << "annealing result: " << std::endl;
-    std::cout << annealing_result[0] << std::endl;
-    std::cout << annealing_result[1] << std::endl;
-    std::vector<double> hill_climb_result = hill_climbing(matyas_function, -5.12, 5.12, 1000000);
-    std::cout << "hill climb result: " << std::endl;
-    std::cout << hill_climb_result[0] << std::endl;
-    std::cout << hill_climb_result[1] << std::endl;
+    start = high_resolution_clock::now();
+    cout << "Climbing:" << endl;
+    output = hill_climbing_algorithm(myMap[function_name], low, high, 1000000);
+    stop = high_resolution_clock::now();
+    duration = stop - start;
+    cout << "x = " << output[0] << ", y = " << output[1] << ", Czas: " << duration/chrono::milliseconds(1000)<< "s" << endl;
+
+    start = high_resolution_clock::now();
+    cout << "Annealing:" << endl;
+    output = annealing_algorithm(myMap[function_name], low, high, 1000000);
+    stop = high_resolution_clock::now();
+    duration = stop - start;
+    cout << "x = " << output[0] << ", y = " << output[1] << ", Czas: " << duration/chrono::milliseconds(1000)<< "s" << endl;
     return 0;
 }
+ //holder -10 10 argument
+*/
