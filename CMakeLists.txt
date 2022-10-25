@@ -8,4 +8,4 @@ include_directories(LAB1)
 add_executable(NSI
         LAB1/lab1.cpp
         LAB1/lab1.h
-        LAB2/zad2.cpp)
+        LAB2/zad2.cpp l3/lab3.cpp)
