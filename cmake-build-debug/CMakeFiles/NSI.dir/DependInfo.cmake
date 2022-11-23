@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "C:/Users/kacpe/CLionProjects/NSI/main.cpp" "CMakeFiles/NSI.dir/main.cpp.obj" "gcc" "CMakeFiles/NSI.dir/main.cpp.obj.d"
+  "C:/Users/s23045/CLionProjects/NSI2/main.cpp" "CMakeFiles/NSI.dir/main.cpp.obj" "gcc" "CMakeFiles/NSI.dir/main.cpp.obj.d"
   )
 
 # Targets to which this target links.

@@ -1,189 +1,123 @@
 #include <iostream>
-#include <functional>
-#include <map>
-#include <math.h>
+#include <vector>
+#include <algorithm>
+#include <cmath>
 #include <random>
-#include <chrono>
 
-using namespace std;
-using myfunction_t = std::function<double(pair<double, double>)>;
-std::random_device rd;
-std::mt19937 mt_generator(rd());
-using chromosome_t = std::vector<int>;
-using population_t = std::vector<chromosome_t>;
 
-double scale(double number, double oldMax, double oldMin, double newMin, double newMax)
-{
-    double OldRange = (oldMax - oldMin);
-    double NewRange = (newMax - newMin);
-    return (((number - oldMin) * NewRange) / OldRange) + newMin;
+int xor_binary(int a, int b){
+    if(a !=b){
+        return 1;
+    }
+    return 0;
 }
 
-population_t populate(int pop_size, int chrom_size){
-    srand(time(nullptr));
-    population_t population;
-    for(int i=0;i<pop_size;i++){
-        chromosome_t chromosome;
-        for(int j=0;j<chrom_size;j++){
-            chromosome.push_back(rand()%2);
-        }
-        population.push_back(chromosome);
-    }
-    return population;
-}
-
-pair<double, double> translate(chromosome_t chromosome){
-    pair<double, double> result={0,0};
-    bool flagNegativeX = false;
-    if(chromosome.at(0)==1)flagNegativeX=true;
-    bool flagNegativeY = false;
-    if(chromosome.at(1)==1)flagNegativeY=true;
-
-    int splitpoint = chromosome.size()/2;
-    //cout << splitpoint << endl;
-
-    int j = 0;
-    for(int i=splitpoint;i>1;i--){
-        result.first += (chromosome.at(i) * pow(2,j));
-        j++;
-    }
-    j=0;
-    for (int i = chromosome.size()-1; i > splitpoint; i--) {
-        result.second += (chromosome.at(i) * pow(2,j));
-        j++;
-    }
-
-    if(flagNegativeX){
-        result.first*=-1;
-    }
-    if(flagNegativeY){
-        result.second*=-1;
-    }
-    result.first = result.first/100000000000000;
-    result.second = result.second/100000000000000;
-    return result;
-}
-
-auto genetic_algorithm = [](
-        auto initial_population, auto fitness, auto term_condition,
-        auto selection,
-        double p_crossover,
-        auto crossover,
-        double p_mutation,
-        auto mutation,
-        myfunction_t function,
-        vector<double> domain,
-        double goal){
-    using namespace std;
-    uniform_real_distribution<double> uniform(0.0,1.0);
-    auto population = initial_population;
-    vector<double> population_fit = fitness(population, function, domain, goal);
-    while (!term_condition(population,population_fit)) {
-        auto parents_indexes = selection(population_fit);
-        decltype(population) new_population;
-        for (int i = 0 ; i < parents_indexes.size(); i+=2) {
-            decltype(initial_population) offspring = {population[i],population[i+1]};
-            if (uniform(mt_generator) < p_crossover) {
-                offspring = crossover(offspring);
-            }
-            for (auto chromosome : offspring) new_population.push_back(chromosome);
-        }
-        for (auto & chromosome : new_population) {
-            chromosome = mutation(chromosome,p_mutation);
-        }
-        population = new_population;
-        population_fit = fitness(population, function, domain, goal);
-    }
-    return population;
-};
-std::vector<double> fitness_function(population_t pop, myfunction_t function, vector<double> domain, double goal){
-    vector<double> result;
-    pair <double, double> currPair;
-    for (int i = 0; i < pop.size(); i++){
-        currPair = translate(pop.at(i));
-        if (currPair.first > domain.at(0) && currPair.first < domain.at(1) && currPair.second > domain.at(0) && currPair.second < domain.at(1)){
-            result.push_back(1000 - function(currPair));
-        }
-        else {
-            result.push_back(1 - scale(abs(currPair.first) ,100, domain.at(1), 0, 1) + 1 - scale(abs(currPair.second) ,100, domain.at(1), 0, 1));
-        }
+std::vector<int> gray_to_binary(std::vector<int> gray){
+    std::vector<int> result = {};
+    int b = gray[0];
+    int g = b;
+    result.push_back(b);
+    b = xor_binary(g, gray[1]);
+    result.push_back(b);
+    for(int i = 2; i < gray.size(); i++){
+        b = xor_binary(b, gray[i]);
+        result.push_back(b);
     }
     return result;
 }
-std::vector<int> selection_empty(std::vector<double> fitnesses) {
-    return {};
+
+double binary_to_decimal(std::vector<int> binary, double starting_power){
+    int result = 0;
+
+    std::vector<int> binary_copy = binary;
+    std::reverse(binary_copy.begin(), binary_copy.end());
+    for (int number : binary_copy){
+        result += number * pow(2.0, starting_power);
+        starting_power += 1;
+    }
+    return result;
 }
-std::vector<chromosome_t > crossover_empty(std::vector<chromosome_t > parents) {
-    return parents;
+
+double gray_to_decimal(std::vector<int> binary, double starting_power){
+
+    double result = 0.0;
+
+    std::vector<int> binary_copy = gray_to_binary(binary);
+    std::reverse(binary_copy.begin(), binary_copy.end());
+    for (int number : binary_copy){
+        result += double(number) * pow(2.0, starting_power);
+        starting_power += 1.0;
+    }
+    return result;
 }
-chromosome_t mutation_empty(chromosome_t parents, double p_mutation) {
-    return parents;
+
+std::vector<double> binary_get_all_args_to_vector(std::vector<int> binary, int number_of_arguments, double starting_power){
+    std::vector<double> result = {};
+    int one_arg_size = binary.size() / number_of_arguments;
+    std::vector<int>::iterator start = binary.begin();
+    for(int i = 0; i < number_of_arguments; i++){
+        std::vector<int> partial(start, start + one_arg_size);
+        int dec = binary_to_decimal(partial, starting_power);
+
+        result.push_back(dec);
+        start += one_arg_size;
+    }
+
+
+    return result;
 }
 
-int main(int argc, char **argv){
+std::vector<double> gray_get_all_args_to_vector(std::vector<int> binary, int number_of_arguments, double starting_power){
+    std::vector<double> result = {};
+    int one_arg_size = binary.size() / number_of_arguments;
+    std::vector<int>::iterator start = binary.begin();
+    for(int i = 0; i < number_of_arguments; i++){
+        std::vector<int> partial(start, start + one_arg_size);
+        double dec = gray_to_decimal(partial, starting_power);
 
-    map<string, myfunction_t> myFunctions;
-    map<string, vector<double>> domain;
-    map<string, double> goal;
-
-    myFunctions["beale"] = [](pair<double, double> xy) {
-        return (pow((1.5 - xy.first + (xy.first * xy.second)),2)) + (pow(2.25 - xy.first + (xy.first * pow(xy.second,2)),2))+(pow(2.625 - xy.first + xy.first * pow(xy.second,3),2));
-    };
-    myFunctions["himmel"] = [](pair<double, double> xy) {
-        return pow(pow(xy.first,2) + xy.second - 11,2) + pow(xy.first + pow(xy.second,2) - 7,2);
-    };
-    myFunctions["threeHumpCamel"] = [](pair<double, double> xy) {
-        return ((2 * pow(xy.first,2) - (1.05 * pow(xy.first,4)) + ((pow(xy.first,6))/6) + (xy.first*xy.second + (pow(xy.second,2)))));
-    };
-    myFunctions["matyas"] = [](pair<double, double> xy) {
-        return (0.26 * (pow(xy.first, 2) + pow(xy.second, 2)) - (0.48 * xy.first * xy.second));
-    };
-
-    domain["beale"] = {-4.5,4.5};
-    domain["himmel"] = {-5,5};
-    domain["threeHumpCamel"] = {-5,5};
-    domain["matyas"] = {-10,10};
-
-    goal["beale"] = 0;
-    goal["himmel"] = 0;
-    goal["threeHumpCamel"] = 0;
-    goal["matyas"] = 0;
-
-   population_t population = populate(100, 100+(23316%10)*2);
-   //pair<double, double> test = translate(population.at(1));
-
-   //printf("%f %f", test.first, test.second);
+        result.push_back(dec);
+        start += one_arg_size;
+    }
 
 
-   try {
-       vector<string> arguments(argv, argv + argc);
-       auto selectedFunction = arguments.at(1);
-       auto result = genetic_algorithm(population,
-                                       fitness_function,
-                                       [](auto a, auto b) { return true; },
-                                       selection_empty,
-                                       1.0,
-                                       crossover_empty,
-                                       0.01,
-                                       mutation_empty,
-                                       myFunctions.at(selectedFunction),
-                                       domain.at(selectedFunction),
-                                       goal.at(selectedFunction));
-       for (chromosome_t chromosome: result) {
-           cout << "[";
-           for (int p: chromosome) {
-               cout << p;
-           }
-           cout << "] ";
-       }
-       cout << endl;
-   }
-   catch (std::out_of_range aor) {
-       cout << "Blad. Podaj poprawny argument. Dostepne to: ";
-       for (auto [k, v] : myFunctions) cout << k << ", ";
-       cout << endl;
-       return 1;
-   }
+    return result;
+}
 
-   return 0;
+double restrigin_function(std::vector <double> xy){
+    double x = xy[0];
+    double y = xy[1];
+    double A = 10.0;
+    return A*2.0 + x*x - A*cos(2*M_PI*x) + y*y - A*cos(2*M_PI*y);
+}
+
+double restrigin_function_from_gray(std::vector <int> gray, double start_power){
+    std::vector<double> args = gray_get_all_args_to_vector(gray, 2, start_power);
+    double x = args[0];
+    double y = args[1];
+    double A = 10.0;
+    return A*2.0 + x*x - A*cos(2*M_PI*x) + y*y - A*cos(2*M_PI*y);
+}
+
+double restrigin_function_from_binary(std::vector <int> binary, double start_power){
+    std::vector<double> args = binary_get_all_args_to_vector(binary, 2, start_power);
+    double x = args[0];
+    double y = args[1];
+    double A = 10.0;
+    return A*2.0 + x*x - A*cos(2*M_PI*x) + y*y - A*cos(2*M_PI*y);
+}
+
+int main() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distr (0,1);
+    std::vector<int>my_numbers;
+    for (int i = 0; i < 111; ++i) {
+        my_numbers.push_back(distr(gen));
+    }
+    double a = restrigin_function_from_gray({1,0,0,1,1,1,1,0,0,1,1,1}, 0.0);
+    double c = restrigin_function_from_gray(my_numbers, -50.0);
+    double b = restrigin_function({58,58});
+//    std::vector<double> r = gray_get_all_args_to_vector({1,0,0,1,1,1,1,0,0,1,1,1}, 2, -3.0);
+    std::cout << "Hello, World!" << std::endl;
+    return 0;
 }
