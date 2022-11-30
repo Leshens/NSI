@@ -25,7 +25,7 @@ std::vector<int> gray_to_binary(std::vector<int> gray){
     }
     return result;
 }
-
+// ^ -> xor
 double binary_to_decimal(std::vector<int> binary, double starting_power){
     int result = 0;
 
@@ -117,7 +117,8 @@ int main() {
     double a = restrigin_function_from_gray({1,0,0,1,1,1,1,0,0,1,1,1}, 0.0);
     double c = restrigin_function_from_gray(my_numbers, -50.0);
     double b = restrigin_function({58,58});
-//    std::vector<double> r = gray_get_all_args_to_vector({1,0,0,1,1,1,1,0,0,1,1,1}, 2, -3.0);
     std::cout << "Hello, World!" << std::endl;
     return 0;
 }
+
+// dodać fitness
