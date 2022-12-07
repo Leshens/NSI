@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <random>
-
+#include <functional>
 
 int xor_binary(int a, int b){
     if(a !=b){
@@ -105,6 +105,15 @@ double restrigin_function_from_binary(std::vector <int> binary, double start_pow
     double A = 10.0;
     return A*2.0 + x*x - A*cos(2*M_PI*x) + y*y - A*cos(2*M_PI*y);
 }
+auto holder = [](vector<double> v) {
+    double x = v[0];
+    double y = v[1];
+    return -abs(sin(x)*cos(y)*exp(abs(1-(sqrt(pow((x),2)+pow((y),2))/M_PI))));
+};
+
+double fitness(vector<int> chromosome) {
+    return 1.0 / (1.0 + abs(holder(restrigin_function_from_gray(chromosome))));
+}
 
 int main() {
     std::random_device rd;
@@ -117,8 +126,7 @@ int main() {
     double a = restrigin_function_from_gray({1,0,0,1,1,1,1,0,0,1,1,1}, 0.0);
     double c = restrigin_function_from_gray(my_numbers, -50.0);
     double b = restrigin_function({58,58});
+    double d = fitness(my_numbers);
     std::cout << "Hello, World!" << std::endl;
     return 0;
 }
-
-// dodać fitness
