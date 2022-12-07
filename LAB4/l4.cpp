@@ -1,121 +1,127 @@
-#include <cstdint>
+#include <iostream>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 #include <random>
-#include <assert.h>
 
-const int nBits = 6;
-const int halfPopulSize = 5;
-double ThrM = 0.4,ThrF = 0.6;
 
-class Individual {
-public:
-    bool bits[nBits];
-    double fitness;
-    void compFitness()
-    {
-        int x = decode();
-        fitness = x*x;
+int xor_binary(int a, int b){
+    if(a !=b){
+        return 1;
     }
-    void initRandom()
-    {
-        for (int i=0; i<nBits; i++)
-            if (rand() % 2==0)
-                bits[i] = 0;
-            else
-                bits[i] = 1;
-    }
-
-    void crossOver(Individual &a, Individual &b)
-    {
-        int pos = rand() % (nBits-1);
-        for (int i=0; i<=pos; i++)
-            bits[i] = b.bits[i];
-        for (int i = pos+1; i < nBits; i++)
-            bits[i] = a.bits[i];
-        printf("CO: %d %d,%d->%d\n",pos, a.decode(), b.decode(), decode());
-    }
-
-    int decode()
-    {
-        //Decode string as unsigned binary integer - true = 1, false = 0
-        int accum = 0; int powerof2 = 1;
-        for (int j = 0; j < nBits; j++)
-        {
-            if (bits[j])accum += powerof2;
-            powerof2 *= 2;
-        }
-        return accum;
-    }
-};
-
-
-std::vector<Individual> males;
-std::vector<Individual> females;
-std::vector<Individual> newMales;
-std::vector<Individual> newFemales;
-
-void initialize()
-{
-    for (int i=0; i<halfPopulSize; i++)
-    {
-        Individual ind;
-        ind.initRandom();
-        males.push_back(ind);
-        ind.initRandom();
-        females.push_back(ind);
-    }
+    return 0;
 }
 
-bool compare(const Individual &a, const Individual &b)
-{
-    return a.fitness > b.fitness;
-}
-
-
-void generate()
-{
-    for (int i = 0; i<halfPopulSize; i++)
-        males[i].compFitness();
-    sort(males.begin(), males.end(), compare);
-    for (int i = 0; i<halfPopulSize; i++)
-        females[i].compFitness();
-    sort(females.begin(), females.end(), compare);
-    int hM = (int)(halfPopulSize * ThrM);
-    int hF = (int)(halfPopulSize * ThrF);
-    for (int i = 0; i<halfPopulSize; i++)
-    {
-        int indexM = rand() % hM;
-        int indexF = rand() % hF;
-        Individual ind;
-        ind.crossOver(males[indexM], females[indexF]);
-        newMales.push_back(ind);
-        indexM = rand() % hM;
-        indexF = rand() % hF;
-        ind.crossOver(males[indexM], females[indexF]);
-        newFemales.push_back(ind);
+std::vector<int> gray_to_binary(std::vector<int> gray){
+    std::vector<int> result = {};
+    int b = gray[0];
+    int g = b;
+    result.push_back(b);
+    b = xor_binary(g, gray[1]);
+    result.push_back(b);
+    for(int i = 2; i < gray.size(); i++){
+        b = xor_binary(b, gray[i]);
+        result.push_back(b);
     }
-    males = move(newMales);
-    females = move(newFemales);
+    return result;
 }
+// ^ -> xor
+double binary_to_decimal(std::vector<int> binary, double starting_power){
+    int result = 0;
 
-void print()
-{
-    for (int i = 0; i<halfPopulSize; i++)
-        printf("%d ",males[i].decode());
-    printf("|");
-    for (int i = 0; i<halfPopulSize; i++)
-        printf("%d ", females[i].decode());
-    printf("\n");
-}
-
-int main()
-{
-    initialize();
-    for (int i=0; i<10; i++)
-    {
-        generate();
-        print();
+    std::vector<int> binary_copy = binary;
+    std::reverse(binary_copy.begin(), binary_copy.end());
+    for (int number : binary_copy){
+        result += number * pow(2.0, starting_power);
+        starting_power += 1;
     }
+    return result;
+}
+
+double gray_to_decimal(std::vector<int> binary, double starting_power){
+
+    double result = 0.0;
+
+    std::vector<int> binary_copy = gray_to_binary(binary);
+    std::reverse(binary_copy.begin(), binary_copy.end());
+    for (int number : binary_copy){
+        result += double(number) * pow(2.0, starting_power);
+        starting_power += 1.0;
+    }
+    return result;
+}
+
+std::vector<double> binary_get_all_args_to_vector(std::vector<int> binary, int number_of_arguments, double starting_power){
+    std::vector<double> result = {};
+    int one_arg_size = binary.size() / number_of_arguments;
+    std::vector<int>::iterator start = binary.begin();
+    for(int i = 0; i < number_of_arguments; i++){
+        std::vector<int> partial(start, start + one_arg_size);
+        int dec = binary_to_decimal(partial, starting_power);
+
+        result.push_back(dec);
+        start += one_arg_size;
+    }
+
+
+    return result;
+}
+
+std::vector<double> gray_get_all_args_to_vector(std::vector<int> binary, int number_of_arguments, double starting_power){
+    std::vector<double> result = {};
+    int one_arg_size = binary.size() / number_of_arguments;
+    std::vector<int>::iterator start = binary.begin();
+    for(int i = 0; i < number_of_arguments; i++){
+        std::vector<int> partial(start, start + one_arg_size);
+        double dec = gray_to_decimal(partial, starting_power);
+
+        result.push_back(dec);
+        start += one_arg_size;
+    }
+
+
+    return result;
+}
+
+double restrigin_function(std::vector <double> xy){
+    double x = xy[0];
+    double y = xy[1];
+    double A = 10.0;
+    return A*2.0 + x*x - A*cos(2*M_PI*x) + y*y - A*cos(2*M_PI*y);
+}
+
+double restrigin_function_from_gray(std::vector <int> gray, double start_power){
+    std::vector<double> args = gray_get_all_args_to_vector(gray, 2, start_power);
+    double x = args[0];
+    double y = args[1];
+    double A = 10.0;
+    return A*2.0 + x*x - A*cos(2*M_PI*x) + y*y - A*cos(2*M_PI*y);
+}
+
+double restrigin_function_from_binary(std::vector <int> binary, double start_power){
+    std::vector<double> args = binary_get_all_args_to_vector(binary, 2, start_power);
+    double x = args[0];
+    double y = args[1];
+    double A = 10.0;
+    return A*2.0 + x*x - A*cos(2*M_PI*x) + y*y - A*cos(2*M_PI*y);
+}
+
+double fitness(std::vector<int> chromosome, double d) {
+    return 1.0 / (1.0 + abs(restrigin_function_from_gray(chromosome,d)));
+}
+
+int main() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distr (0,1);
+    std::vector<int>my_numbers;
+    for (int i = 0; i < 111; ++i) {
+        my_numbers.push_back(distr(gen));
+    }
+    double a = restrigin_function_from_gray({1,0,0,1,1,1,1,0,0,1,1,1}, 0.0);
+    double c = restrigin_function_from_gray(my_numbers, -50.0);
+    double b = restrigin_function({58,58});
+    double d = fitness(my_numbers, -50.0);
+    std::cout << "Hello, World!" << std::endl;
     return 0;
 }
