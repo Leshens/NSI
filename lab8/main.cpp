@@ -24,7 +24,7 @@ int main( int argc, char** argv ) {
         return -1;
     }
     std::cout << "Video size: " << cap.get( cv::CAP_PROP_FRAME_WIDTH )
-    << "x" << cap.get( cv::CAP_PROP_FRAME_HEIGHT ) << std::endl;
+              << "x" << cap.get( cv::CAP_PROP_FRAME_HEIGHT ) << std::endl;
     namedWindow("detected", cv::WINDOW_AUTOSIZE);
 /*
  HL=21
@@ -34,8 +34,8 @@ int main( int argc, char** argv ) {
  VL=138
  VU=208
  */
-    std::vector<int> lower = {21,128,138};
-    std::vector<int> upper = {35,45,200};
+    std::vector<int> lower = {94,13,174};
+    std::vector<int> upper = {106,45,231};
     cv::createTrackbar("HL", "detected", &lower[0], 255);
     cv::createTrackbar("SL", "detected", &lower[1], 255);
     cv::createTrackbar("VL", "detected", &lower[2], 255);
@@ -52,16 +52,11 @@ int main( int argc, char** argv ) {
             cvtColor( frame, gray_image, cv::COLOR_BGR2HSV );
             cv::Mat imgThresholded;
 
-//gfg 0 ,141, 87 - 15, 255, 255
             inRange(gray_image, cv::Scalar(lower[0], lower[1], lower[2]), cv::Scalar(upper[0], upper[1], upper[2]), imgThresholded);
             auto kernel = getStructuringElement(cv::MORPH_ELLIPSE,cv::Size{5,5});
 
             cv::Mat eroded;
             dilate(imgThresholded, eroded, kernel);
-//            erode(eroded, eroded, kernel);
-
-//            cv::Mat canny_output;
-//            Canny( eroded, canny_output, 10, 255 );
 
             std::vector<std::vector<cv::Point> > contours;
             std::vector<cv::Vec4i> hierarchy;
@@ -104,11 +99,3 @@ int main( int argc, char** argv ) {
     } while( capturing );
     return 0;
 }
-/*
- HL=21
- HU=35
- SL=128
- SU=45
- VL=138
- VU=208
- */
